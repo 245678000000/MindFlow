@@ -1,11 +1,31 @@
 #!/bin/zsh
+# Usage: ./build.sh            → native arch, fast
+#        ./build.sh universal  → arm64 + x86_64
 set -e
 cd "$(dirname "$0")"
-swift build -c release
+VERSION=$(cat VERSION)
+BUILD_NUM=$(git rev-list --count HEAD 2>/dev/null || echo 1)
 APP=build/MindFlow.app
+
+if [[ "$1" == "universal" ]]; then
+  swift build -c release --triple arm64-apple-macosx14.0
+  swift build -c release --triple x86_64-apple-macosx14.0
+  BIN_ARM=.build/arm64-apple-macosx/release/MindFlow
+  BIN_X86=.build/x86_64-apple-macosx/release/MindFlow
+else
+  swift build -c release
+fi
+
 rm -rf "$APP"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp .build/release/MindFlow "$APP/Contents/MacOS/"
+if [[ "$1" == "universal" ]]; then
+  lipo -create "$BIN_ARM" "$BIN_X86" -output "$APP/Contents/MacOS/MindFlow"
+else
+  cp .build/release/MindFlow "$APP/Contents/MacOS/"
+fi
 cp Resources/Info.plist "$APP/Contents/"
+plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
+plutil -replace CFBundleVersion -string "$BUILD_NUM" "$APP/Contents/Info.plist"
+
 if [ ! -f Resources/AppIcon.icns ]; then
   TMP=$(mktemp -d); swift scripts/make_icon.swift "$TMP/icon.png"
   SET="$TMP/AppIcon.iconset"; mkdir "$SET"
@@ -17,4 +37,4 @@ if [ ! -f Resources/AppIcon.icns ]; then
 fi
 cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 codesign --force --deep -s - "$APP"
-echo "Built $APP"
+echo "Built $APP ($VERSION)"

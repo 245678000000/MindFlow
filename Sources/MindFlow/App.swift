@@ -17,14 +17,27 @@ struct MindFlowApp: App {
         .commands { MapCommands() }
 
         Settings { SettingsView() }
+
+        Window("软件更新", id: "updater") { UpdateWindow() }
+            .windowResizability(.contentSize)
+            .windowStyle(.hiddenTitleBar)
+            .defaultPosition(.center)
     }
 }
 
 struct MapCommands: Commands {
     @FocusedValue(\.mapModel) private var model
     @FocusedValue(\.toggleAI) private var toggleAI
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Commands {
+        CommandGroup(after: .appInfo) {
+            Button("检查更新…") {
+                openWindow(id: "updater")
+                Task { await Updater.shared.check(userInitiated: true) }
+            }
+        }
+
         CommandGroup(after: .saveItem) {
             Divider()
             Button("导出为图片…") { model?.exportPNG() }

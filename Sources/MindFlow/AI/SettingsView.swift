@@ -5,10 +5,50 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     var body: some View {
         TabView {
+            GeneralSettings()
+                .tabItem { Label("通用", systemImage: "gearshape") }
             ProvidersSettings()
                 .tabItem { Label("AI 服务商", systemImage: "server.rack") }
         }
         .frame(width: 760, height: 520)
+    }
+}
+
+struct GeneralSettings: View {
+    @Bindable private var updater = Updater.shared
+    @Environment(\.openWindow) private var openWindow
+    @State private var auto = Updater.shared.autoCheck
+
+    var body: some View {
+        Form {
+            Section {
+                HStack(spacing: 14) {
+                    Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 52, height: 52)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("MindFlow").font(.system(size: 15, weight: .semibold))
+                        Text("版本 \(Updater.currentVersion)").font(.system(size: 12)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Link("GitHub", destination: URL(string: "https://github.com/\(Updater.repo)")!)
+                        .font(.system(size: 12))
+                }
+                .padding(.vertical, 4)
+            }
+            Section("软件更新") {
+                Toggle("自动检查更新", isOn: $auto)
+                    .onChange(of: auto) { _, v in updater.autoCheck = v }
+                HStack {
+                    Text(updater.lastCheck.map { "上次检查：" + $0.formatted(date: .abbreviated, time: .shortened) } ?? "尚未检查")
+                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("立即检查") {
+                        openWindow(id: "updater")
+                        Task { await updater.check(userInitiated: true) }
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
     }
 }
 

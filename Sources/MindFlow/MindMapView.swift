@@ -14,6 +14,8 @@ struct MindMapView: View {
         _chat = State(initialValue: ChatModel(map: m))
     }
     @State private var panStart: CGSize?
+    @Environment(\.openWindow) private var openWindow
+    private let updater = Updater.shared
 
     var body: some View {
         let theme = Themes.at(document.data.theme)
@@ -33,7 +35,9 @@ struct MindMapView: View {
         .onAppear {
             model.document = $document
             model.selection = document.data.root.id
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { updater.checkIfDue() }
         }
+        .onChange(of: updater.windowRequest) { openWindow(id: "updater") }
         .onChange(of: document.data) { _, d in
             if let s = model.selection, d.root.find(s) == nil { model.selection = d.root.id }
         }

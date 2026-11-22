@@ -31,6 +31,10 @@
 
 > API Key 保存在 `~/Library/Application Support/MindFlow/providers.json`（权限 600），不会上传到任何地方。
 
+## 下载
+
+到 [Releases](https://github.com/245678000000/MindFlow/releases/latest) 下载最新的 `MindFlow-x.y.z.zip`，解压后拖到「应用程序」。App 内置检查更新（菜单 MindFlow › 检查更新…），有新版本时可一键安装。
+
 ## 构建
 
 需要 macOS 14+ 与 Xcode Command Line Tools（无需完整 Xcode）。
@@ -40,7 +44,9 @@
 open build/MindFlow.app
 ```
 
-App 使用本地 ad-hoc 签名。首次在其他 Mac 上打开时，请右键 → 打开。
+App 使用 ad-hoc 签名。首次打开若提示无法验证开发者，请右键 → 打开，或执行 `xattr -dr com.apple.quarantine /Applications/MindFlow.app`。
+
+发布新版本：`scripts/release.sh 1.1.0 "更新说明"`（通用二进制，自动打包并创建 GitHub Release）。
 
 ## 快捷键
 
