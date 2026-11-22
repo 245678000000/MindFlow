@@ -16,6 +16,7 @@ struct ChatMessage: Identifiable {
     var opsSummary: String?
     var before: MapData?
     var after: MapData?
+    var revision: Int?
     var model: String?
 }
 
@@ -184,12 +185,14 @@ final class ChatModel {
         }
         map.commitEdit()
         let before = map.data
-        var result = OpsResult()
-        map.mutate { d in result = MapAgent.apply(ops, context: ctx, selection: map.selection, to: &d) }
-        let after = map.data
+        var after = before
+        let result = MapAgent.apply(ops, context: ctx, selection: map.selection, to: &after)
+        let snapshot = after
+        map.mutate { $0 = snapshot }
         update(sid, id) { m in
             m.before = before
             m.after = after
+            m.revision = map.revision
             m.opsSummary = result.summary + (result.failures > 0 ? "（\(result.failures) 项未能应用）" : "")
             m.opsState = result.isEmpty ? .failed : .applied
         }
@@ -203,7 +206,7 @@ final class ChatModel {
     }
 
     func canRevert(_ m: ChatMessage) -> Bool {
-        m.opsState == .applied && m.after == map.data
+        m.opsState == .applied && m.revision == map.revision
     }
 
     func insertIntoMap(_ id: UUID) {

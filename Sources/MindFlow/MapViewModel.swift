@@ -22,6 +22,8 @@ final class MapViewModel {
     var dragOffset: CGSize = .zero
     var dropTargetID: UUID?
     var focusTick = 0
+    /// Bumped on every edit made through `mutate`; observable, unlike the document binding.
+    var revision = 0
 
     // MARK: Data
 
@@ -34,7 +36,10 @@ final class MapViewModel {
         guard let document else { return }
         var d = document.wrappedValue.data
         body(&d)
-        if d != document.wrappedValue.data { document.wrappedValue.data = d }
+        if d != document.wrappedValue.data {
+            document.wrappedValue.data = d
+            revision += 1
+        }
     }
 
     // MARK: Coordinates
